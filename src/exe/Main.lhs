@@ -5,12 +5,13 @@ User interface
 
 > module Main (main) where
 > import System.Environment (getArgs)
-> import Data.List (intercalate)
+> import Data.Function (on)
+> import Data.List (intercalate, sortBy)
 >
-> import Codec.Pesto.Parse (parse, Instruction (Ingredient), Quantity (..))
+> import Codec.Pesto.Parse (parse, Instruction (Ingredient, Tool, Annotation, Action), Quantity (..))
 > import Codec.Pesto.Graph (extract, toGraph, firstNodeId, resolveReferences)
 > import Codec.Pesto.Lint (lint, extractMetadata, Metadata(..), LintResult (LintResult))
-> import Codec.Pesto.Serialize (serialize)
+> import Codec.Pesto.Serialize (serialize, prettyPrint, style)
 
 The user-interface has different modes of operation. All of them read a single
 recipe from the standard input.
@@ -43,7 +44,7 @@ can represent recipes as well. Example:
 
 	cabal run --verbose=0 pesto dot < spaghetti.pesto | dot -Tpng > spaghetti.png
 
-> runDot stream = putStrLn $ toDot dotNodes dotEdges
+> runDot stream = putStrLn $ toDot dotNodes dotEdges nodes
 > 	where
 > 		(nodes, edges) = streamToGraph stream
 > 		maxId = (maximum $ map fst nodes) + 1
@@ -51,7 +52,7 @@ can represent recipes as well. Example:
 > 				$ zip [maxId..] (lint nodes edges)
 > 		dotNodes = concat [
 >				  [("node", [("fontname", "Roboto Semi-Light")])]
-> 				, map (\(a, label) -> (show a, [("label", serialize label)])) nodes
+> 				, map (\(a, label) -> (show a, [("label", prettyPrint label)] ++ (style label))) nodes
 > 				, lintNodes
 >				]
 > 		dotEdges = concat [
@@ -66,14 +67,40 @@ can represent recipes as well. Example:
 
 > both f (a, b) = (f a, f b)
 
-> toDot nodes edges = "digraph a {"
-> 		<> mconcat (map nodeToDot nodes)
-> 		<> mconcat (map edgeToDot edges)
+> toDot nodes edges ns = "digraph a {\n"
+>		<> "graph [rankdir=LR;splines=true;concentrate=true]\n"
+> 		<> "\t" <> intercalate "\n\t" (map nodeToDot nodes) <> "\n"
+> 		<> "\t" <> intercalate "\n\t" (map edgeToDot edges) <> "\n"
+
+Add invisible edges to order ingredients top-to-bottom (on left side) and tools left-to-right (on top).
+
+>		<> "\t" <> intercalate " -> " sortedIngredients <> "[style=invis];\n"
+>		<> "\t" <> intercalate " -> " ((head sortedIngredients) : sortedTools) <> "[style=invis;weight=999];\n"
+
+Put ingredients on same vertical line. 
+
+> 		<> "{rank=same;" <> intercalate ";" sortedIngredients <> "}\n"
 > 		<> "}"
 > 	where
-> 		edgeToDot (a, b) = a <> " -> " <> b <> ";"
->		nodeToDot (a, b) = a <> " [" <> mconcat (mapToDot b) <> "];"
+> 		sortedNodes = snd $ unzip $ sortBy (compare `on` fst) ns
+>		sortedIngredients = reverse $ foldl getIngredient [] ns
+>		sortedTools = reverse $ foldl getTool [] ns
+>		getIngredient xs (i, Ingredient _) = (show i):xs
+> 		getIngredient xs _ = xs
+>		getTool xs (i, Tool _) = (show i):xs
+> 		getTool xs _ = xs
 
+Add a reversed (invisible) edge from an action to its tools to keep them close together on the x-axis. 
+
+> 		edgeToDot (a, b) | (Just (Tool _), Just (Action _)) <- (sortedNodes `at` (read a :: Int), sortedNodes `at` (read b :: Int))  = a <> ":s -> " <> b <> ":n [weight=0;];" <> b <> ":n -> " <> a <> ":s [weight=0;style=invis];"
+
+
+>		edgeToDot (a, b) | (Just (Annotation _), Just (Tool _)) <- (sortedNodes `at` (read a :: Int), sortedNodes `at` (read b :: Int)) = a <> ":s -> " <> b <> ":n [weight=1;style=dashed];" <> b <> ":n -> " <> a <> ":s [weight=1;style=invis];"
+>		edgeToDot (a, b) | (Just (Annotation _), Just (Ingredient _)) <- (sortedNodes `at` (read a :: Int), sortedNodes `at` (read b :: Int)) = a <> ":e -> " <> b <> ":w [style=dashed];"
+> 		edgeToDot (a, b) = a <> ":e -> " <> b <> ":w;"
+>		nodeToDot (a, b) = a <> " [" <> intercalate "," (mapToDot b) <> "];"
+
+> at xs i = if i < length xs then Just (xs !! i) else Nothing
 > mapToDot = map kvToDot
 > kvToDot (k, v) = k <> "=\"" <> quoteString v <> "\""
 > quoteString s = mconcat $ map quoteChar s
