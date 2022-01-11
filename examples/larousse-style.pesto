@@ -1,0 +1,46 @@
+Chicken sauté chasseur
+
+Sauté the chicken in a mixture of oil and butter. When it is three-quarters cooked, add 125 g of raw, sliced mushrooms. 
+Dilute the juices in the pan with 100 ml of white wine. Add a chopped shallot, reduce, add 150 ml of thickened rich veal gravy and 50 ml tomato sauce. Cook at boiling point for a few moments, add a tablespoon of brandy and a tablespoon of parsley, chervil, and tarragon, finely chopped. 
+Set the chicken on a dish, coat with the sauce, and sprinkle with chopped parsley. 
+
+%pesto
+
+&pan
++chicken
++oil
++butter
+[Sauté the chicken in a mixture of oil and butter]
+
++125 g mushrooms (raw, sliced)
+[When it is three-quarters cooked, add mushrooms]
+
++100 ml "white wine"
+[Dilute the juices in the pan with white wine]
+
++1 _ shallot (chopped)
+[Add]
+[Reduce]
+
++150 ml "veal gravy" (thickened rich)
++50 ml "tomato sauce"
+[Add]
+
+[Cook at boiling point for a few moments]
+>"cooked chicken"
+
++1/3 tbsp parsley (finely chopped)
++1/3 tbsp chervil (finely chopped)
++1/3 tbsp tarragon (finely chopped)
+[Mix]
+
+*"cooked chicken"
++1 tbsp brandy
+[Add]
+
+&dish
++ _ _ parsley (chopped)
+[Set cooked chicken on a dish, coat with the sauce, and sprinkle with chopped parsley]
+
+>1 _ "Chicken sauté chasseur"
+(language: en)
