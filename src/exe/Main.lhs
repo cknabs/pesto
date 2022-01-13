@@ -8,7 +8,7 @@ User interface
 > import Data.Function (on)
 > import Data.List (intercalate, sortBy)
 >
-> import Codec.Pesto.Parse (parse, Instruction (Ingredient, Tool, Annotation, Action), Quantity (..))
+> import Codec.Pesto.Parse (parse, Instruction (Ingredient, Tool, Annotation, Action, Reference, Result), Quantity (..))
 > import Codec.Pesto.Graph (extract, toGraph, firstNodeId, resolveReferences)
 > import Codec.Pesto.Lint (lint, extractMetadata, Metadata(..), LintResult (LintResult))
 > import Codec.Pesto.Serialize (serialize, prettyPrint, style)
@@ -51,13 +51,13 @@ can represent recipes as well. Example:
 > 		(lintNodes, lintEdges) = unzip $ map (uncurry lintToNodesEdges)
 > 				$ zip [maxId..] (lint nodes edges)
 > 		dotNodes = concat [
->				  [("node", [("fontname", "Roboto Semi-Light")])]
+>				  [("node", [("fontname", "Roboto Semi-Light"), ("shape", "plaintext"), ("style", "filled, rounded"), ("margin", "0.2")])]
 > 				, map (\(a, label) -> (show a, [("label", prettyPrint label)] ++ (style label))) nodes
-> 				, lintNodes
+> 				--, lintNodes
 >				]
 > 		dotEdges = concat [
 > 				  map (both show) edges
-> 				, concat lintEdges
+> 				--, concat lintEdges
 > 				]
 
 > lintToNodesEdges nodeid (LintResult t nodes) = let
@@ -68,18 +68,19 @@ can represent recipes as well. Example:
 > both f (a, b) = (f a, f b)
 
 > toDot nodes edges ns = "digraph a {\n"
->		<> "graph [rankdir=LR;splines=true;concentrate=true]\n"
+>		<> "graph [rankdir=LR;splines=true;concentrate=true;nodesep=0.02;mindist=0.0;fontsize=40;ranksep=0.5]\n"
 > 		<> "\t" <> intercalate "\n\t" (map nodeToDot nodes) <> "\n"
 > 		<> "\t" <> intercalate "\n\t" (map edgeToDot edges) <> "\n"
 
 Add invisible edges to order ingredients top-to-bottom (on left side) and tools left-to-right (on top).
 
->		<> "\t" <> intercalate " -> " sortedIngredients <> "[style=invis];\n"
->		<> "\t" <> intercalate " -> " ((head sortedIngredients) : sortedTools) <> "[style=invis;weight=999];\n"
+>		<> "\t" <> "orig [style=invis];\n"
+>		<> "\t" <> intercalate " -> " ("orig" : sortedIngredients) <> "[style=invis];\n"
+>		<> "\t" <> intercalate " -> " ("orig" : sortedTools) <> "[style=invis;weight=999];\n"
 
 Put ingredients on same vertical line. 
 
-> 		<> "{rank=same;" <> intercalate ";" sortedIngredients <> "}\n"
+> 		<> "{rank=same;" <> intercalate ";" ("orig" : sortedIngredients) <> "}\n"
 > 		<> "}"
 > 	where
 > 		sortedNodes = snd $ unzip $ sortBy (compare `on` fst) ns
@@ -93,8 +94,6 @@ Put ingredients on same vertical line.
 Add a reversed (invisible) edge from an action to its tools to keep them close together on the x-axis. 
 
 > 		edgeToDot (a, b) | (Just (Tool _), Just (Action _)) <- (sortedNodes `at` (read a :: Int), sortedNodes `at` (read b :: Int))  = a <> ":s -> " <> b <> ":n [weight=0;];" <> b <> ":n -> " <> a <> ":s [weight=0;style=invis];"
-
-
 >		edgeToDot (a, b) | (Just (Annotation _), Just (Tool _)) <- (sortedNodes `at` (read a :: Int), sortedNodes `at` (read b :: Int)) = a <> ":s -> " <> b <> ":n [weight=1;style=dashed];" <> b <> ":n -> " <> a <> ":s [weight=1;style=invis];"
 >		edgeToDot (a, b) | (Just (Annotation _), Just (Ingredient _)) <- (sortedNodes `at` (read a :: Int), sortedNodes `at` (read b :: Int)) = a <> ":e -> " <> b <> ":w [style=dashed];"
 > 		edgeToDot (a, b) = a <> ":e -> " <> b <> ":w;"

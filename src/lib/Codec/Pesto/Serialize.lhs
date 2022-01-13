@@ -6,6 +6,8 @@ Serializing
 > module Codec.Pesto.Serialize (serialize, prettyPrint, style) where
 > import Data.Char (isSpace, isLetter)
 > import Data.Ratio (numerator, denominator)
+> import Data.Text (pack, unpack)
+> import Text.Wrap (wrapText, defaultWrapSettings)
 >
 > import {-# SOURCE #-} Codec.Pesto.Parse
 
@@ -71,6 +73,8 @@ There are two special cases here, both for aesthetic reasons:
 dot
 ^^^
 
+> maxLineLen = 30
+
 
 > class PrettyPrintable a where
 > 	prettyPrint :: a -> String
@@ -81,10 +85,10 @@ dot
 > instance PrettyPrintable Instruction where
 > 	prettyPrint (Annotation s) = quote '(' ')' s
 > 	prettyPrint (Ingredient q) = prettyPrint q
-> 	prettyPrint (Tool q) = '&':prettyPrint q
-> 	prettyPrint (Action s) = s
-> 	prettyPrint (Reference q) = '*':prettyPrint q
-> 	prettyPrint (Result q) = '>':prettyPrint q
+> 	prettyPrint (Tool q) = prettyPrint q
+> 	prettyPrint (Action s) = unpack (wrapText defaultWrapSettings maxLineLen (pack s))
+> 	prettyPrint (Reference q) = prettyPrint q
+> 	prettyPrint (Result q) = prettyPrint q
 > 	prettyPrint (Alternative q) = '|':prettyPrint q
 > 	prettyPrint (Directive s) = '%':prettyPrintQstr s
 > 	prettyPrint (Unknown s) = s
@@ -92,7 +96,7 @@ dot
 > instance PrettyPrintable Quantity where
 > 	prettyPrint (Quantity a b "") = prettyPrint a ++ " " ++ prettyPrintQstr b
 > 	prettyPrint (Quantity (Exact (AmountStr "")) "" c) = prettyPrintQstr c
-> 	prettyPrint (Quantity a "" c) = prettyPrint a ++ " _ " ++ prettyPrintQstr c
+> 	prettyPrint (Quantity a "" c) = prettyPrint a ++ " " ++ prettyPrintQstr c
 > 	prettyPrint (Quantity a b c) = prettyPrint a ++ " " ++ prettyPrintQstr b ++ " " ++ prettyPrintQstr c
 
 > instance PrettyPrintable Approximately where
@@ -118,8 +122,6 @@ There are two special cases here, both for aesthetic reasons:
 > 	prettyPrint (AmountRatio a) = show (numerator a) ++ "/" ++ show (denominator a)
 > 	prettyPrint (AmountStr s) = prettyPrintQstr s
 
-> prettyPrintQstr "" = "_"
-> prettyPrintQstr s | (not . isLetter . head) s || hasSpaces s = quote '"' '"' s
 > prettyPrintQstr s = s
 
 
@@ -132,10 +134,10 @@ dot style
 
 
 > instance Styleable Instruction where
-> 	style (Annotation s) = [("shape", "none")]
-> 	style (Ingredient q) = [("shape", "none")]
-> 	style (Tool q) = [("shape", "box")]
-> 	style (Action s) = [("shape", "triangle"), ("orientation", "270")]
+> 	style (Annotation s) = []
+> 	style (Ingredient q) = [("color", "#40A040"), ("fontcolor", "#FFFFFF")]
+> 	style (Tool q) = []
+> 	style (Action s) = []
 > 	style (Reference q) = []
 > 	style (Result q) = []
 > 	style (Alternative q) = []
@@ -171,6 +173,6 @@ There are two special cases here, both for aesthetic reasons:
 > 	style (AmountRatio a) = []
 > 	style (AmountStr s) = []
 
-> styleQstr "" = "_"
-> styleQstr s | (not . isLetter . head) s || hasSpaces s = quote '"' '"' s
+> -- styleQstr "" = "_"
+> -- styleQstr s | (not . isLetter . head) s || hasSpaces s = quote '"' '"' s
 > styleQstr s = s
