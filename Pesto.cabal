@@ -14,8 +14,8 @@ cabal-version:       >=1.10
 
 -- parsec>=3.1.9 has instance Eq ParseError
 library
-  exposed-modules:     Codec.Pesto, Codec.Pesto.Parse, Codec.Pesto.Graph, Codec.Pesto.Lint, Codec.Pesto.Serialize
-  build-depends:       base >=4.8, HUnit, parsec >= 3.1.9, text, word-wrap >= 0.5
+  exposed-modules:     Codec.Pesto, Codec.Pesto.Parse, Codec.Pesto.Graph, Codec.Pesto.Lint, Codec.Pesto.Serialize, Codec.Pesto.Style
+  build-depends:       base >=4.8, HUnit, parsec >= 3.1.9, text, word-wrap >= 0.5, aeson >= 2.0.3.0
   hs-source-dirs:      src/lib
   default-language:    Haskell2010
   ghc-options:         -Wall -fno-warn-missing-signatures
