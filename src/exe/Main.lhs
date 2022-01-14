@@ -8,10 +8,11 @@ User interface
 > import Data.Function (on)
 > import Data.List (intercalate, sortBy)
 >
-> import Codec.Pesto.Parse (parse, Instruction (Ingredient, Tool, Annotation, Action, Reference, Result), Quantity (..))
+> import Codec.Pesto.Parse (parse, Instruction (Ingredient, Tool, Annotation, Action), Quantity (..))
 > import Codec.Pesto.Graph (extract, toGraph, firstNodeId, resolveReferences)
 > import Codec.Pesto.Lint (lint, extractMetadata, Metadata(..), LintResult (LintResult))
-> import Codec.Pesto.Serialize (serialize, prettyPrint, style)
+> import Codec.Pesto.Serialize (serialize)
+> import Codec.Pesto.Style (prettyPrint, style)
 
 The user-interface has different modes of operation. All of them read a single
 recipe from the standard input.
